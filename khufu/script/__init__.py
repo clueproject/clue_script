@@ -1,6 +1,9 @@
+from __future__ import print_function
+
 import abc
 import argparse
 import logging
+import os
 import StringIO
 import sys
 import textwrap
@@ -35,34 +38,12 @@ class Command(object):
 class SimpleObject(object):
     pass
 
-class ReloadableServerCommand(Command):
-    '''Run a reloadable development web server.
-    '''
+class WSGIAppRunner(object):
 
-    _logger_name = __name__ + '.server'
+    def __init__(self, logger = None):
+        self.logger = logger or logging.getLogger('unused')
 
-    __name__ = 'runserver'
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--host', help='Host/IP to listen on, specify 0.0.0.0 for all available interfaces',
-                        default='0.0.0.0', metavar='host')
-    parser.add_argument('-p', '--port', type=int,
-                        help='Port to listen on, defaults to 8080',
-                        default=8080, metavar='port')
-    parser.add_argument('--with-reloader', action='store_true',
-                        help='Watch for code changes and restart as necessary',
-                        default=False)
-
-    def __init__(self, app_factory, logger=None):
-        super(ReloadableServerCommand, self).__init__(logger)
-        self.app_factory = app_factory
-
-    def do_work(self, argv):
-        ns = self.parser.parse_args(argv)
-        app = self.app_factory()
-        self.wsgi_serve(application=app, host=ns.host, port=ns.port)
-
-    def wsgi_serve(self, application, host, port):
+    def wsgi_serve(self, application, host, port, with_reloader):
         # lazily loading paste stuff and defining the class to reduce dependencies
         from paste import httpserver
         logger = self.logger
@@ -89,7 +70,80 @@ class ReloadableServerCommand(Command):
 
         server = WSGIServer(application, host, port)
         self.logger.info('Listening on: %s:%s' % (host, port))
-        server.serve_forever()
+
+        if not with_reloader:
+            server.serve_forever()
+            return
+
+        from Queue import Empty
+        from multiprocessing import Process, Queue, Event, active_children
+
+        tx = Queue()
+
+        def spinup():
+            rx = Event()
+            worker = Process(target=self._process_handler,
+                             args=(server, tx, rx))
+            worker.rx = rx
+            worker.start()
+            return worker
+
+        spinup()
+
+        while True:
+            try:
+                msg = tx.get(True, 1)
+                if msg['status'] == 'changed':
+                    logger.info('code reloaded')
+                    spinup()
+                elif msg['status'] == 'loaded':
+                    for worker in active_children():
+                        if worker.ident != msg['pid']:
+                            worker.rx.set()
+            except Empty:
+                if not active_children():
+                    return
+
+    def _process_handler(self, server, tx, rx):
+        from threading import Thread
+        from reloadwsgi import Monitor
+        try:
+            tx.put({'pid':os.getpid(), 'status':'loaded'})
+            t = Thread(target=server.serve_forever)
+            t.setDaemon(True)
+            t.start()
+            monitor = Monitor(tx=tx, rx=rx)
+            monitor.periodic_reload()
+        except KeyboardInterrupt:
+            pass
+
+class ReloadableServerCommand(Command):
+    '''Run a reloadable development web server.
+    '''
+
+    _logger_name = __name__ + '.server'
+
+    __name__ = 'runserver'
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--host', help='Host/IP to listen on, specify 0.0.0.0 for all available interfaces',
+                        default='0.0.0.0', metavar='host')
+    parser.add_argument('-p', '--port', type=int,
+                        help='Port to listen on, defaults to 8080',
+                        default=8080, metavar='port')
+    parser.add_argument('--with-reloader', action='store_true',
+                        help='Watch for code changes and restart as necessary',
+                        default=False)
+
+    def __init__(self, app_factory, logger=None):
+        super(ReloadableServerCommand, self).__init__(logger)
+        self.app_factory = app_factory
+
+    def do_work(self, argv):
+        ns = self.parser.parse_args(argv)
+        app = self.app_factory()
+        WSGIAppRunner(self.logger).wsgi_serve(application=app, host=ns.host, port=ns.port,
+                                              with_reloader=ns.with_reloader)
 
 class SyncDBCommand(Command):
     '''Update the database.
@@ -116,11 +170,11 @@ class SyncDBCommand(Command):
 
 def display_usage(commands):
     s = StringIO.StringIO()
-    print >> s, 'Commands:'
+    print('Commands:', file=s)
     for x in commands:
-        print >> s, '   ', x.__name__, '   ', (x.__doc__ or '').strip()
+        print('    ' + x.__name__ + '     ' + (x.__doc__ or '').strip(), file=s)
     for x in s.getvalue().split('\n'):
-        print textwrap.fill(x)
+        print(textwrap.fill(x), file=s)
 
 def find_command(s, commands):
     for x in commands:
@@ -135,8 +189,8 @@ def run(argv=sys.argv[1:], commands=[]):
 
     cmd = find_command(argv[0], commands)
     if cmd is None:
-        print 'Not a valid command: %s' % argv[0]
-        print
+        print('Not a valid command: %s' % argv[0])
+        print()
         display_usage(commands)
         return
 
