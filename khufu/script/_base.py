@@ -18,13 +18,12 @@ class Command(object):
             self.logger.setLevel(logging.INFO)
         self._logger_name = self.logger.name
 
-    def run(self, options):
+    def run(self, argv):
         logging.basicConfig()
-        self.do_work(options)
+        self.do_work(argv)
 
     @abc.abstractproperty
     def __name__(self): pass
 
     @abc.abstractmethod
-    def do_work(self, options): pass
-
+    def do_work(self, argv): pass
