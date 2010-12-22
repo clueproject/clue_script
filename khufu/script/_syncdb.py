@@ -1,4 +1,4 @@
-from khufu.script._base import Command
+from khufu.script import Command
 
 
 class SyncDBCommand(Command):
@@ -11,7 +11,7 @@ class SyncDBCommand(Command):
         self.session_factory = session_factory
         self.update_callables = update_callables
 
-    def do_work(self, argv):
+    def run(self, argv):
         session = self.session_factory()
         try:
             for x in self.update_callables:

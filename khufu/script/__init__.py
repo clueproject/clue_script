@@ -1,10 +1,14 @@
 from __future__ import print_function
 
+import abc
+import logging
 import StringIO
 import sys
 import textwrap
 
-from khufu.script._base import __version__, Command
+import pkg_resources
+
+__version__ = pkg_resources.get_distribution('Khufu-Script').version
 
 def make_reloadable_server_command(*args, **kwargs):
     from khufu.script._wsgi import ReloadableServerCommand
@@ -13,6 +17,22 @@ def make_reloadable_server_command(*args, **kwargs):
 def make_syncdb_command(*args, **kwargs):
     from khufu.script._syncdb import SyncDBCommand
     return SyncDBCommand(*args, **kwargs)   
+
+class Command(object):
+
+    __metaclass__ = abc.ABCMeta
+
+    @abc.abstractproperty
+    def __name__(self): pass
+
+    def __init__(self, logger=None):
+        self.logger = logger
+        if logger is None:
+            self.logger = logging.getLogger('%s.%s' % (__package__, self.__name__))
+            self.logger.setLevel(logging.INFO)
+
+    @abc.abstractmethod
+    def run(self, argv): pass
 
 class Commander(Command):
 
@@ -35,7 +55,7 @@ class Commander(Command):
         self.print()
         self.print_usage()
 
-    def do_work(self, argv):
+    def run(self, argv=sys.argv[1:]):
         if len(argv) == 0:
             self.print_usage()
             return
@@ -46,9 +66,6 @@ class Commander(Command):
             return
 
         cmd.run(argv[1:])
-
-    def run(self, argv=sys.argv[1:]):
-        super(Commander, self).run(argv)
 
     def print_usage(self):
         self.print('Commands:')
@@ -81,7 +98,7 @@ class PseudoCommand(Command):
         self.name = name or func.__name__
         self.__doc__ = doc or func.__doc__
 
-    def do_work(self, argv):
+    def run(self, argv):
         self.func(*argv)
 
     @property

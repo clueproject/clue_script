@@ -9,7 +9,8 @@ from reloadwsgi import Monitor
 
 from paste import httpserver
 
-from khufu.script._base import __version__, Command
+from khufu.script import Command, __version__
+
 
 class ReloadableServerCommand(Command):
     '''Run a reloadable development web server.
@@ -33,7 +34,7 @@ class ReloadableServerCommand(Command):
         super(ReloadableServerCommand, self).__init__(logger)
         self.app_factory = app_factory
 
-    def do_work(self, argv):
+    def run(self, argv):
         ns = self.parser.parse_args(argv)
         app = self.app_factory()
         WSGIAppRunner(self.logger).wsgi_serve(application=app, host=ns.host, port=ns.port,
