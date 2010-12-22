@@ -70,6 +70,7 @@ class WSGIServer(httpserver.WSGIServer, object):
     def wsgi_handler(self, *args, **kwargs):
         return WSGIHandler(self.logger, *args, **kwargs)
 
+# Some of this code copied from ReloadWSGI - thanks Daniel Holth!
 class WSGIAppRunner(object):
 
     def __init__(self, logger = None):

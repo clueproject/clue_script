@@ -11,14 +11,21 @@ import pkg_resources
 __version__ = pkg_resources.get_distribution('Khufu-Script').version
 
 def make_reloadable_server_command(*args, **kwargs):
+    '''Create a new runserver command'''
+
     from khufu.script._wsgi import ReloadableServerCommand
     return ReloadableServerCommand(*args, **kwargs)
 
 def make_syncdb_command(*args, **kwargs):
+    '''Create a new syncdb command'''
+
     from khufu.script._syncdb import SyncDBCommand
     return SyncDBCommand(*args, **kwargs)   
 
 class Command(object):
+    '''Base class for commands, provides support for setting up default
+    logger.
+    '''
 
     __metaclass__ = abc.ABCMeta
 
@@ -35,21 +42,32 @@ class Command(object):
     def run(self, argv): pass
 
 class Commander(Command):
+    '''A command that knows how to run sub-commands.
+
+    :param initial_commands: an iterable of commands to start with
+    '''
 
     __name__ = 'commander'
 
     def __init__(self, initial_commands=None):
-        self._commands = list(initial_commands or [])
+        # copy the iterable as our base list
+        self._commands = [x for x in initial_commands or []]
 
     def add(self, cmd):
+        '''Add the given subcommand'''
+
         if not isinstance(cmd, Command):
             cmd = PseudoCommand(cmd)
         self._commands.append(cmd)
 
     def print(self, *args, **kwargs):
+        '''Mostly provided as an easy way to override output'''
+
         print(*args, **kwargs)
 
     def invalid_command_trigger(self, s):
+        '''Fired when an incorrect command is executed'''
+
         self.print()
         self.print('Not a valid command: %s' % s)
         self.print()
@@ -87,13 +105,25 @@ class Commander(Command):
 
     @classmethod
     def scan(cls, ns=globals()):
+        '''A constructor for Commander that will scan the given dict
+        for functions marked with the command decorator and register
+        them as new commands.
+        '''
+
         commander = cls()
         for k, v in ns.items():
             if hasattr(v, '__khufu_command'):
                 commander.add(PseudoCommand(v))
 
 class PseudoCommand(Command):
+    '''A simple command that acts as a proxy for any sort
+    of callable.
+    '''
+
     def __init__(self, func, name=None, doc=None):
+        if not callable(func):
+            raise TypeError('First argument must be a callable')
+
         self.func = func
         self.name = name or func.__name__
         self.__doc__ = doc or func.__doc__
@@ -106,5 +136,7 @@ class PseudoCommand(Command):
         return self.name
 
 def command(f):
+    '''A decorator that marks the given function as being command-able'''
+
     f.__khufu_command = True
     return f
