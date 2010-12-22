@@ -1,13 +1,9 @@
 import argparse
 import os
+import subprocess
 import sys
-from Queue import Empty
-from multiprocessing import Process, Queue, Event, active_children
-from threading import Thread
 
-from reloadwsgi import Monitor
-
-from paste import httpserver
+from paste import httpserver, reloader
 
 from khufu.script import Command, __version__
 
@@ -37,8 +33,8 @@ class ReloadableServerCommand(Command):
     def run(self, argv):
         ns = self.parser.parse_args(argv)
         app = self.app_factory()
-        WSGIAppRunner(self.logger).wsgi_serve(application=app, host=ns.host, port=ns.port,
-                                              with_reloader=ns.with_reloader)
+        runner = WSGIAppRunner(application=app, host=ns.host, port=ns.port, logger=self.logger)
+        runner.wsgi_serve(with_reloader=ns.with_reloader)
 
 class WSGIHandler(httpserver.WSGIHandler, object): 
 
@@ -70,55 +66,90 @@ class WSGIServer(httpserver.WSGIServer, object):
     def wsgi_handler(self, *args, **kwargs):
         return WSGIHandler(self.logger, *args, **kwargs)
 
-# Some of this code copied from ReloadWSGI - thanks Daniel Holth!
+
 class WSGIAppRunner(object):
+    
+    _reloader_key = 'KHUFU_SCRIPT_RELOADER'
 
-    def __init__(self, logger = None):
-        self.logger = logger or logging.getLogger('unused')
+    def __init__(self, application, host, port, logger=None):
+        self.application = application
+        self.host = host
+        self.port = port
+        self.logger = logger or logging.getLogger('khufu.unused')
 
-    def wsgi_serve(self, application, host, port, with_reloader):
-        logger = self.logger
-        server = WSGIServer(application, host, port, logger)
-        self.logger.info('Listening on: %s:%s' % (host, port))
+    def wsgi_serve(self, with_reloader):
+        if not with_reloader or self._reloader_key not in os.environ:
+            self.logger.info('Listening on: %s:%s' % (self.host, self.port))
 
-        if not with_reloader:
+        if self._reloader_key in os.environ or not with_reloader:
+            reloader.install()
+            server = WSGIServer(self.application, self.host, self.port, self.logger)
             server.serve_forever()
             return
 
-        tx = Queue()
+        self.restart_with_reloader()
 
-        def spinup():
-            rx = Event()
-            worker = Process(target=self._process_handler,
-                             args=(server, tx, rx))
-            worker.rx = rx
-            worker.start()
-            return worker
-
-        spinup()
+    def restart_with_reloader(self):
+        self.logger.info('Starting subprocess with reloader')
 
         while True:
+            args = [self.quote_first_command_arg(sys.executable)] + sys.argv
+            new_environ = os.environ.copy()
+            new_environ[self._reloader_key] = 'true'
+
+            proc = None
             try:
-                msg = tx.get(True, 1)
-                if msg['status'] == 'changed':
-                    logger.info('code reloaded')
-                    spinup()
-                elif msg['status'] == 'loaded':
-                    for worker in active_children():
-                        if worker.ident != msg['pid']:
-                            worker.rx.set()
-            except Empty:
-                if not active_children():
-                    return
+                try:
+                    _turn_sigterm_into_systemexit()
+                    proc = subprocess.Popen(args, env=new_environ)
+                    exit_code = proc.wait()
+                    proc = None
+                except KeyboardInterrupt:
+                    return 1
+            finally:
+                if (proc is not None
+                    and hasattr(os, 'kill')):
+                    import signal
+                    try:
+                        os.kill(proc.pid, signal.SIGTERM)
+                    except (OSError, IOError):
+                        pass
 
-    def _process_handler(self, server, tx, rx):
+            if exit_code != 3:
+                return exit_code
+
+            self.logger.info('reloading code, restarting server process')
+
+    def quote_first_command_arg(self, arg):
+        """
+        There's a bug in Windows when running an executable that's
+        located inside a path with a space in it.  This method handles
+        that case, or on non-Windows systems or an executable with no
+        spaces, it just leaves well enough alone.
+        """
+        if (sys.platform != 'win32'
+            or ' ' not in arg):
+            # Problem does not apply:
+            return arg
         try:
-            tx.put({'pid':os.getpid(), 'status':'loaded'})
-            t = Thread(target=server.serve_forever)
-            t.setDaemon(True)
-            t.start()
-            monitor = Monitor(tx=tx, rx=rx)
-            monitor.periodic_reload()
-        except KeyboardInterrupt:
-            pass
+            import win32api
+        except ImportError:
+            raise ValueError(
+                "The executable %r contains a space, and in order to "
+                "handle this issue you must have the win32api module "
+                "installed" % arg)
+        arg = win32api.GetShortPathName(arg)
+        return arg
 
+def _turn_sigterm_into_systemexit():
+    """
+    Attempts to turn a SIGTERM exception into a SystemExit exception.
+    """
+    try:
+        import signal
+    except ImportError:
+        return
+    def handle_term(signo, frame):
+        raise SystemExit
+    signal.signal(signal.SIGTERM, handle_term)
+    
