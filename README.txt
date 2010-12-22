@@ -8,6 +8,20 @@ Khufu-Script is used for defining subcommands with a special focus on
 web-style apps.  The functionality is inspired by the Django ``manage.py``
 script.
 
+Requirements
+============
+
+  * Python 2.6 or 2.7 (not tested with Python 3.x)
+
+
+runserver support (optional)
+----------------------------
+
+  * ReloadWSGI
+  * Paste
+  * argparse *(if deploying on Python < 2.7)*
+
+
 Usage
 =====
 
@@ -45,7 +59,7 @@ Provided Commands
 
 There are currently two provided command factories.
 
-  1. ``make_reloadable_server_command`` *(requires eggs: argparse (on Python < 2.7), PasteDeploy, ReloadWSGI)*
+  1. ``make_reloadable_server_command`` *(see above note about requirements for runserver)*
 
   2. ``make_syncdb_command``
 
