@@ -5,14 +5,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.txt')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
-requires = ['setuptools',
-            'ReloadWSGI']
-
-try:
-    import argparse
-except ImportError:
-    # Python < 2.7
-    requires.append('argparse')
+requires = ['setuptools']
 
 setup(name='Khufu-Script',
       version='0.1dev',

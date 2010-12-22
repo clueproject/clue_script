@@ -3,6 +3,9 @@ import os
 import sys
 from Queue import Empty
 from multiprocessing import Process, Queue, Event, active_children
+from threading import Thread
+
+from reloadwsgi import Monitor
 
 from paste import httpserver
 
@@ -107,8 +110,6 @@ class WSGIAppRunner(object):
                     return
 
     def _process_handler(self, server, tx, rx):
-        from threading import Thread
-        from reloadwsgi import Monitor
         try:
             tx.put({'pid':os.getpid(), 'status':'loaded'})
             t = Thread(target=server.serve_forever)

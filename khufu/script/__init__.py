@@ -18,11 +18,18 @@ class Commander(Command):
 
     __name__ = 'commander'
 
-    def __init__(self, initial_commands=[]):
-        self._commands = list(initial_commands)
+    def __init__(self, initial_commands=None):
+        self._commands = list(initial_commands or [])
 
-    def add(self, command):
-        self._commands.append(command)
+    def add(self, cmd):
+        if not isinstance(cmd, Command):
+            cmd = PseudoCommand(cmd)
+        self._commands.append(cmd)
+
+    def invalid_command_trigger(self, s):
+        print('Not a valid command: %s' % argv[0])
+        print()
+        self.display_usage()
 
     def do_work(self, argv):
         if len(argv) == 0:
@@ -31,12 +38,13 @@ class Commander(Command):
 
         cmd = self.find_command(argv[0])
         if cmd is None:
-            print('Not a valid command: %s' % argv[0])
-            print()
-            self.display_usage()
+            self.invalid_command_trigger(argv[0])
             return
 
         cmd.run(argv[1:])
+
+    def run(self, argv=sys.argv[1:]):
+        super(Commander, self).run(argv)
 
     def display_usage(self):
         s = StringIO.StringIO()
@@ -52,10 +60,12 @@ class Commander(Command):
                 return x
         return None
 
-    def scan(self, ns=globals()):
+    @classmethod
+    def scan(cls, ns=globals()):
+        commander = cls()
         for k, v in ns.items():
             if hasattr(v, '__khufu_command'):
-                self.add(PseudoCommand(v))
+                commander.add(PseudoCommand(v))
 
 class PseudoCommand(Command):
     def __init__(self, func, name=None, doc=None):
