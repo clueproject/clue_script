@@ -26,14 +26,18 @@ class Commander(Command):
             cmd = PseudoCommand(cmd)
         self._commands.append(cmd)
 
+    def print(self, *args, **kwargs):
+        print(*args, **kwargs)
+
     def invalid_command_trigger(self, s):
-        print('Not a valid command: %s' % argv[0])
-        print()
-        self.display_usage()
+        self.print()
+        self.print('Not a valid command: %s' % s)
+        self.print()
+        self.print_usage()
 
     def do_work(self, argv):
         if len(argv) == 0:
-            self.display_usage()
+            self.print_usage()
             return
 
         cmd = self.find_command(argv[0])
@@ -46,8 +50,8 @@ class Commander(Command):
     def run(self, argv=sys.argv[1:]):
         super(Commander, self).run(argv)
 
-    def display_usage(self):
-        print('Commands:')
+    def print_usage(self):
+        self.print('Commands:')
         for x in self._commands:
             name = x.__name__
             c = (20-len(name))
@@ -56,7 +60,7 @@ class Commander(Command):
             else:
                 spaces = (c * ' ') + '  '
             line = '    %s%s%s' % (x.__name__, spaces, (x.__doc__ or '').strip())
-            print(textwrap.fill(line))
+            self.print(textwrap.fill(line))
 
     def find_command(self, s):
         for x in self._commands:
