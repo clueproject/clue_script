@@ -18,29 +18,29 @@ class CommanderTests(unittest.TestCase):
         assert isinstance(commander._commands[0], PseudoCommand)
 
         class MockCommand(Command):
-            def do_work(self, argv): pass
+            def run(self, argv): pass
         commander.add(MockCommand())
         assert isinstance(commander._commands[1], MockCommand)
 
-    def test_do_work(self):
+    def test_run(self):
         class MockCommander(Commander):
             usage_displayed = False
             invalid = False
-            def display_usage(self): self.usage_displayed = True
+            def print_usage(self): self.usage_displayed = True
             def invalid_command_trigger(self, s): self.invalid = True
         commander = MockCommander()
-        commander.do_work([])
+        commander.run([])
         assert commander.usage_displayed
 
         commander = MockCommander()
-        commander.do_work(['foo'])
+        commander.run(['foo'])
         assert commander.usage_displayed is False
         assert commander.invalid
 
         commander = MockCommander()
         def bar(): pass
         commander.add(bar)
-        commander.do_work(['bar'])
+        commander.run(['bar'])
         assert commander.usage_displayed is False
         assert commander.invalid is False
 
