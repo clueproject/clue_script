@@ -17,7 +17,6 @@ Requirements
 runserver support (optional)
 ----------------------------
 
-  * ReloadWSGI
   * Paste
   * argparse *(if deploying on Python < 2.7)*
 
