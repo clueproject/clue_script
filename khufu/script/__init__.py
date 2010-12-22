@@ -47,12 +47,16 @@ class Commander(Command):
         super(Commander, self).run(argv)
 
     def display_usage(self):
-        s = StringIO.StringIO()
-        print('Commands:', file=s)
+        print('Commands:')
         for x in self._commands:
-            print('    ' + x.__name__ + '     ' + (x.__doc__ or '').strip(), file=s)
-        for x in s.getvalue().split('\n'):
-            print(textwrap.fill(x))
+            name = x.__name__
+            c = (20-len(name))
+            if c < 2:
+                spaces = '  '
+            else:
+                spaces = (c * ' ') + '  '
+            line = '    %s%s%s' % (x.__name__, spaces, (x.__doc__ or '').strip())
+            print(textwrap.fill(line))
 
     def find_command(self, s):
         for x in self._commands:
