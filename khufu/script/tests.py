@@ -67,3 +67,36 @@ class CommandTests(unittest.TestCase):
         command.run(['-x', 'abc'])
         ns = ran.pop()
         assert ns.x is 'abc'
+
+
+from khufu.script._syncdb import SyncDBCommand
+
+class MockSession(object):
+    closed = False
+    committed = False
+    rolled_back = False
+    def close(self): self.closed = True
+    def commit(self): self.committed = True
+    def rollback(self): self.rolled_back = True
+
+class SyncDBTests(unittest.TestCase):
+
+    def test_good_run(self):
+        session = MockSession()
+        cmd = SyncDBCommand(lambda: session, lambda x: None)
+        cmd.run([])
+        assert session.committed is True
+        assert session.closed is True
+
+    def test_bad_run(self):
+        def foo(session):
+            raise Exception('foo')
+        session = MockSession()
+        cmd = SyncDBCommand(lambda: session, foo)
+        try:
+            cmd.run([])
+        except:
+            pass
+
+        assert session.rolled_back is True
+        assert session.closed is True
