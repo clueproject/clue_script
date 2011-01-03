@@ -72,10 +72,9 @@ class CommandTests(unittest.TestCase):
 from khufu.script._syncdb import SyncDBCommand
 
 class MockSession(object):
-    closed = False
     committed = False
     rolled_back = False
-    def close(self): self.closed = True
+    def close(self): pass
     def commit(self): self.committed = True
     def rollback(self): self.rolled_back = True
 
@@ -86,7 +85,6 @@ class SyncDBTests(unittest.TestCase):
         cmd = SyncDBCommand(lambda: session, lambda x: None)
         cmd.run([])
         assert session.committed is True
-        assert session.closed is True
 
     def test_bad_run(self):
         def foo(session):
@@ -99,4 +97,3 @@ class SyncDBTests(unittest.TestCase):
             pass
 
         assert session.rolled_back is True
-        assert session.closed is True
