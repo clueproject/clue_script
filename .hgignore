@@ -11,3 +11,4 @@ syntax:glob
 *.rej
 *.so
 _build
+dist
