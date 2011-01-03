@@ -8,7 +8,7 @@ CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 requires = ['setuptools']
 
 setup(name='Khufu-Script',
-      version='0.1dev',
+      version='0.2',
       description='Khufu component for defining subcommands',
       long_description=README + '\n\n' +  CHANGES,
       classifiers=[
@@ -21,7 +21,7 @@ setup(name='Khufu-Script',
       author_email='rocky@serverzen.com',
       namespace_packages=['khufu'],
       url='http://bitbucket.org/rockyburt/khufu-script',
-      keywords='web pyramid pylons',
+      keywords='web',
       packages=find_packages(),
       include_package_data=True,
       zip_safe=False,
