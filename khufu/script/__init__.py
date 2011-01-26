@@ -114,6 +114,7 @@ class Commander(Command):
         for k, v in ns.items():
             if hasattr(v, '__khufu_command'):
                 commander.add(PseudoCommand(v))
+        return commander
 
 class PseudoCommand(Command):
     '''A simple command that acts as a proxy for any sort

@@ -3,6 +3,11 @@
 Changes
 =======
 
+0.2.1 (Jan-26-2011)
+-------------------
+
+  * Fixed scan() method to return commander instance
+
 0.2 (Jan-3-2011)
 ----------------
 

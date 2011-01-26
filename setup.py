@@ -8,7 +8,7 @@ CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 requires = ['setuptools']
 
 setup(name='Khufu-Script',
-      version='0.2',
+      version='0.2.1',
       description='Khufu component for defining subcommands',
       long_description=README + '\n\n' +  CHANGES,
       classifiers=[
