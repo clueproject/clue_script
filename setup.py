@@ -7,10 +7,15 @@ CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
 requires = ['setuptools']
 
+try:
+    import argparse
+except ImportError:
+    requires.append('argparse')
+
 setup(name='Khufu-Script',
-      version='0.2.1',
+      version='0.2.2',
       description='Khufu component for defining subcommands',
-      long_description=README + '\n\n' +  CHANGES,
+      long_description=README + '\n\n' + CHANGES,
       classifiers=[
         "License :: OSI Approved :: BSD License",
         "Programming Language :: Python",
@@ -20,12 +25,12 @@ setup(name='Khufu-Script',
       author='Rocky Burt',
       author_email='rocky@serverzen.com',
       namespace_packages=['khufu'],
-      url='http://bitbucket.org/rockyburt/khufu-script',
+      url='https://github.com/serverzen/Khufu-Script',
       keywords='web',
       packages=find_packages(),
       include_package_data=True,
       zip_safe=False,
       install_requires=requires,
       test_suite="khufu.script.tests",
-      entry_points = "",
+      entry_points="",
       )
