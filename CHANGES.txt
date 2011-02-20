@@ -3,6 +3,11 @@
 Changes
 =======
 
+0.2.3 (Feb-20-2011)
+-------------------
+
+  * Renamed from ``Khufu-Script`` to ``clue_script``
+
 0.2.2 (Feb-16-2011)
 -------------------
 

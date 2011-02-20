@@ -1,4 +1,4 @@
-from khufu.script import Command
+from clue_script import Command
 
 
 class SyncDBCommand(Command):

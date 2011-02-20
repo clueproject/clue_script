@@ -12,9 +12,9 @@ try:
 except ImportError:
     requires.append('argparse')
 
-setup(name='Khufu-Script',
-      version='0.2.2',
-      description='Khufu component for defining subcommands',
+setup(name='clue_script',
+      version='0.2.3',
+      description='Easy utils for creating a script runner',
       long_description=README + '\n\n' + CHANGES,
       classifiers=[
         "License :: OSI Approved :: BSD License",
@@ -24,13 +24,12 @@ setup(name='Khufu-Script',
       license='BSD',
       author='Rocky Burt',
       author_email='rocky@serverzen.com',
-      namespace_packages=['khufu'],
-      url='https://github.com/serverzen/Khufu-Script',
+      url='https://github.com/serverzen/clue_script',
       keywords='web',
       packages=find_packages(),
       include_package_data=True,
       zip_safe=False,
       install_requires=requires,
-      test_suite="khufu.script.tests",
+      test_suite="clue_script.tests",
       entry_points="",
       )

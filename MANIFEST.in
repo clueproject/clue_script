@@ -1,2 +1,1 @@
-recursive-include khufu *.txt
-include *.txt README.* *.ini
+global-include *.txt *.ini README.*

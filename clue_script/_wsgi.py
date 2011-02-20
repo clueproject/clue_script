@@ -2,10 +2,11 @@ import argparse
 import os
 import subprocess
 import sys
+import logging
 
 from paste import httpserver, reloader
 
-from khufu.script import Command, __version__
+from clue_script import Command, __version__
 
 
 class ReloadableServerCommand(Command):
@@ -50,7 +51,7 @@ class WSGIHandler(httpserver.WSGIHandler, object):
                                       environ['PATH_INFO']))
 
 class WSGIServer(httpserver.WSGIServer, object):
-    server_version = 'PasteWSGIServer+Khufu/' + __version__
+    server_version = 'PasteWSGIServer+clue_script/' + __version__
 
     def __init__(self, application, host, port, logger):
         super(WSGIServer, self).__init__(application, (host, port), self.wsgi_handler)
@@ -69,13 +70,13 @@ class WSGIServer(httpserver.WSGIServer, object):
 
 class WSGIAppRunner(object):
     
-    _reloader_key = 'KHUFU_SCRIPT_RELOADER'
+    _reloader_key = 'CLUE_SCRIPT_RELOADER'
 
     def __init__(self, application, host, port, logger=None):
         self.application = application
         self.host = host
         self.port = port
-        self.logger = logger or logging.getLogger('khufu.unused')
+        self.logger = logger or logging.getLogger('clue_script.unused')
 
     def wsgi_serve(self, with_reloader):
         if not with_reloader or self._reloader_key not in os.environ:

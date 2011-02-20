@@ -1,14 +1,14 @@
 import argparse
 import unittest
 
-from khufu.script import command, Command, Commander, PseudoCommand
+from clue_script import command, Command, Commander, PseudoCommand
 
 class CommandDecoratorTests(unittest.TestCase):
     def test_foo(self):
         @command
         def f():
             pass
-        assert hasattr(f, '__khufu_command')
+        assert hasattr(f, '__clue_script_command')
 
 class CommanderTests(unittest.TestCase):
 
@@ -69,7 +69,7 @@ class CommandTests(unittest.TestCase):
         assert ns.x is 'abc'
 
 
-from khufu.script._syncdb import SyncDBCommand
+from clue_script._syncdb import SyncDBCommand
 
 class MockSession(object):
     committed = False

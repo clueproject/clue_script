@@ -1,10 +1,13 @@
 .. -*-rst-*-
 
-==============
- Khufu-Script
-==============
+=============
+ clue_script
+=============
 
-Khufu-Script is used for defining subcommands with a special focus on
+Overview
+========
+
+clue_script is used for defining subcommands with a special focus on
 web-style apps.  The functionality is inspired by the Django ``manage.py``
 script.
 
@@ -26,7 +29,7 @@ Usage
 
 A simple example to add a command that prints "hello world"::
 
-  from khufu.script import command, Commander
+  from clue_script import command, Commander
 
   @command
   def helloworld():
@@ -40,7 +43,7 @@ Python 2.7's ``argparse`` (also available on 2.6).
 ::
 
   import argparse
-  from khufu.script import command, Commander
+  from clue_script import command, Commander
 
   @command
   def foo(*argv):

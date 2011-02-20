@@ -8,18 +8,21 @@ import textwrap
 
 import pkg_resources
 
-__version__ = pkg_resources.get_distribution('Khufu-Script').version
+try:
+    __version__ = pkg_resources.get_distribution('clue_script').version
+except:
+    __version__ = 'dev'
 
 def make_reloadable_server_command(*args, **kwargs):
     '''Create a new runserver command'''
 
-    from khufu.script._wsgi import ReloadableServerCommand
+    from clue_script._wsgi import ReloadableServerCommand
     return ReloadableServerCommand(*args, **kwargs)
 
 def make_syncdb_command(*args, **kwargs):
     '''Create a new syncdb command'''
 
-    from khufu.script._syncdb import SyncDBCommand
+    from clue_script._syncdb import SyncDBCommand
     return SyncDBCommand(*args, **kwargs)   
 
 class Command(object):
@@ -112,7 +115,7 @@ class Commander(Command):
 
         commander = cls()
         for k, v in ns.items():
-            if hasattr(v, '__khufu_command'):
+            if hasattr(v, '__clue_script_command'):
                 commander.add(PseudoCommand(v))
         return commander
 
@@ -139,5 +142,5 @@ class PseudoCommand(Command):
 def command(f):
     '''A decorator that marks the given function as being command-able'''
 
-    f.__khufu_command = True
+    f.__clue_script_command = True
     return f
