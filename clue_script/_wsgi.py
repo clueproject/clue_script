@@ -18,7 +18,9 @@ class ReloadableServerCommand(Command):
     __name__ = 'runserver'
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--host', help='Host/IP to listen on, specify 0.0.0.0 for all available interfaces',
+    parser.add_argument('-i', '--host',
+                        help=('Host/IP to listen on, specify 0.0.0.0 '
+                              'for all available interfaces'),
                         default='0.0.0.0', metavar='host')
     parser.add_argument('-p', '--port', type=int,
                         help='Port to listen on, defaults to 8080',
@@ -34,11 +36,12 @@ class ReloadableServerCommand(Command):
     def run(self, argv):
         ns = self.parser.parse_args(argv)
         app = self.app_factory()
-        runner = WSGIAppRunner(application=app, host=ns.host, port=ns.port, logger=self.logger)
+        runner = WSGIAppRunner(application=app, host=ns.host,
+                               port=ns.port, logger=self.logger)
         runner.wsgi_serve(with_reloader=ns.with_reloader)
 
-class WSGIHandler(httpserver.WSGIHandler, object): 
 
+class WSGIHandler(httpserver.WSGIHandler, object):
     def __init__(self, logger, *args, **kwargs):
         self.logger = logger
         super(WSGIHandler, self).__init__(*args, **kwargs)
@@ -50,11 +53,13 @@ class WSGIHandler(httpserver.WSGIHandler, object):
                                       environ['SCRIPT_NAME'],
                                       environ['PATH_INFO']))
 
+
 class WSGIServer(httpserver.WSGIServer, object):
     server_version = 'PasteWSGIServer+clue_script/' + __version__
 
     def __init__(self, application, host, port, logger):
-        super(WSGIServer, self).__init__(application, (host, port), self.wsgi_handler)
+        super(WSGIServer, self).__init__(application, (host, port),
+                                         self.wsgi_handler)
         self.logger = logger
 
     def handle_error(self, request, client_address):
@@ -69,7 +74,7 @@ class WSGIServer(httpserver.WSGIServer, object):
 
 
 class WSGIAppRunner(object):
-    
+
     _reloader_key = 'CLUE_SCRIPT_RELOADER'
 
     def __init__(self, application, host, port, logger=None):
@@ -84,7 +89,8 @@ class WSGIAppRunner(object):
 
         if self._reloader_key in os.environ or not with_reloader:
             reloader.install()
-            server = WSGIServer(self.application, self.host, self.port, self.logger)
+            server = WSGIServer(self.application, self.host,
+                                self.port, self.logger)
             server.serve_forever()
             return
 
@@ -142,6 +148,7 @@ class WSGIAppRunner(object):
         arg = win32api.GetShortPathName(arg)
         return arg
 
+
 def _turn_sigterm_into_systemexit():
     """
     Attempts to turn a SIGTERM exception into a SystemExit exception.
@@ -150,7 +157,7 @@ def _turn_sigterm_into_systemexit():
         import signal
     except ImportError:
         return
+
     def handle_term(signo, frame):
         raise SystemExit
     signal.signal(signal.SIGTERM, handle_term)
-    
