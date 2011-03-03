@@ -87,8 +87,11 @@ class WSGIAppRunner(object):
         if not with_reloader or self._reloader_key not in os.environ:
             self.logger.info('Listening on: %s:%s' % (self.host, self.port))
 
-        if self._reloader_key in os.environ or not with_reloader:
+        if self._reloader_key in os.environ:
+            self.logger.info('Monitoring code files')
             reloader.install()
+
+        if self._reloader_key in os.environ or not with_reloader:
             server = WSGIServer(self.application, self.host,
                                 self.port, self.logger)
             server.serve_forever()

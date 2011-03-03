@@ -3,6 +3,12 @@
 Changes
 =======
 
+0.2.4 (Mar-3-2011)
+------------------
+
+  * Fixed problem where the non-reloader portion would shut down the
+    app if code was changed
+
 0.2.3 (Feb-20-2011)
 -------------------
 
