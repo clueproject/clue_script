@@ -2,8 +2,8 @@ import os
 from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
-README = open(os.path.join(here, 'README.txt')).read()
-CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
+README = open(os.path.join(here, 'README.rst')).read()
+CHANGES = open(os.path.join(here, 'CHANGES.rst')).read()
 
 requires = ['setuptools']
 
@@ -24,7 +24,7 @@ setup(name='clue_script',
       license='BSD',
       author='Rocky Burt',
       author_email='rocky@serverzen.com',
-      url='https://github.com/serverzen/clue_script',
+      url='https://github.com/clueproject/clue_script',
       keywords='web',
       packages=find_packages(),
       include_package_data=True,

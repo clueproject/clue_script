@@ -1,1 +1,1 @@
-global-include *.txt *.ini README.*
+global-include *.txt *.ini README.* *.rst
