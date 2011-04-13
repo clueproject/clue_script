@@ -35,8 +35,7 @@ class ReloadableServerCommand(Command):
 
     def run(self, argv):
         ns = self.parser.parse_args(argv)
-        app = self.app_factory()
-        runner = WSGIAppRunner(application=app, host=ns.host,
+        runner = WSGIAppRunner(app_factory=self.app_factory, host=ns.host,
                                port=ns.port, logger=self.logger)
         runner.wsgi_serve(with_reloader=ns.with_reloader)
 
@@ -77,11 +76,15 @@ class WSGIAppRunner(object):
 
     _reloader_key = 'CLUE_SCRIPT_RELOADER'
 
-    def __init__(self, application, host, port, logger=None):
-        self.application = application
+    def __init__(self, app_factory, host, port, logger=None):
+        self.app_factory = app_factory
         self.host = host
         self.port = port
         self.logger = logger or logging.getLogger('clue_script.unused')
+
+    @property
+    def application(self):
+        return self.app_factory()
 
     def wsgi_serve(self, with_reloader):
         if not with_reloader or self._reloader_key not in os.environ:
