@@ -98,23 +98,14 @@ class Commander(Command):
         if not prog and len(sys.argv) >= 1:
             prog = os.path.basename(sys.argv[0])
 
-        add_help = len(argv) == 0 or '-h' in argv or '--help' in argv
-        parser = self.get_parser(prog, not add_help)
-
-        if add_help:
-            argv = list(argv)
-            argv.append('-h')
-
-        ns = parser.parse_args(argv)
-
-        if ns.help:
+        if len(argv) == 0 or argv[0] in ('-h', '--help'):
             self.print_usage(prog)
             return
 
-        cmd = self.commands.get(ns.command)
+        cmd = self.commands.get(argv[0])
         if cmd is None:
             self.print()
-            self.print('  ERROR: Not a valid command: %s' % ns.command)
+            self.print('  ERROR: Not a valid command: %s' % argv[0])
             self.print_usage(prog)
             return
 
