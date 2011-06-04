@@ -27,6 +27,27 @@ def make_syncdb_command(*args, **kwargs):
     return SyncDBCommand(*args, **kwargs)
 
 
+class OrderedDict(dict):
+
+    def __init__(self, *args, **kwargs):
+        dict.__init__(self, *args, **kwargs)
+        self.ordered = []
+
+    def __setitem__(self, k, v):
+        if k not in self.ordered:
+            self.ordered.append(k)
+        dict.__setitem__(self, k, v)
+
+    def keys(self):
+        return self.ordered
+
+    def items(self):
+        return [(x, self[x]) for x in self.keys()]
+
+    def values(self):
+        return [self[x] for x in self.keys()]
+
+
 class Command(object):
     '''Base class for commands, provides support for setting up default
     logger.
@@ -60,14 +81,15 @@ class Commander(Command):
 
     def __init__(self, initial_commands=None):
         # copy the iterable as our base list
-        self._commands = [x for x in initial_commands or []]
+        self.commands = OrderedDict([(x.__name__, x)
+                                     for x in initial_commands or []])
 
     def add(self, cmd):
         '''Add the given subcommand'''
 
         if not isinstance(cmd, Command):
             cmd = PseudoCommand(cmd)
-        self._commands.append(cmd)
+        self.commands[cmd.__name__] = cmd
 
     def print(self, *args, **kwargs):
         '''Mostly provided as an easy way to override output'''
@@ -87,7 +109,7 @@ class Commander(Command):
             self.print_usage()
             return
 
-        cmd = self.find_command(argv[0])
+        cmd = self.commands.get(argv[0])
         if cmd is None:
             self.invalid_command_trigger(argv[0])
             return
@@ -96,8 +118,7 @@ class Commander(Command):
 
     def print_usage(self):
         self.print('Commands:')
-        for x in self._commands:
-            name = x.__name__
+        for name, x in self.commands.items():
             c = 20 - len(name)
             if c < 2:
                 spaces = '  '
@@ -107,12 +128,6 @@ class Commander(Command):
                                    spaces,
                                    (x.__doc__ or '').strip())
             self.print(textwrap.fill(line))
-
-    def find_command(self, s):
-        for x in self._commands:
-            if x.__name__ == s:
-                return x
-        return None
 
     @classmethod
     def scan(cls, ns=globals()):

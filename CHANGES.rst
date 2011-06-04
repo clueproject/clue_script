@@ -3,6 +3,11 @@
 Changes
 =======
 
+0.3 (unreleased)
+----------------
+
+  * Made Commander.commands a little more exposed
+
 0.2.4 (Mar-3-2011)
 ------------------
 
