@@ -169,8 +169,6 @@ class Commander(Command):
 
             self.print(line, file=io)
 
-        self.print(file=io)
-
         return io.getvalue()
 
     def _get_doc(self, command):
