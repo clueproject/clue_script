@@ -20,13 +20,6 @@ def make_reloadable_server_command(*args, **kwargs):
     return ReloadableServerCommand(*args, **kwargs)
 
 
-def make_syncdb_command(*args, **kwargs):
-    '''Create a new syncdb command'''
-
-    from clue_script._syncdb import SyncDBCommand
-    return SyncDBCommand(*args, **kwargs)
-
-
 class OrderedDict(dict):
 
     def __init__(self, *args, **kwargs):
