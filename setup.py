@@ -10,10 +10,10 @@ requires = ['setuptools']
 try:
     import argparse
 except ImportError:
-    requires.append('argparse')
+    requires.append('argparse >= 1.2')
 
 setup(name='clue_script',
-      version='0.2.4',
+      version='0.3',
       description='Easy utils for creating a script runner',
       long_description=README + '\n\n' + CHANGES,
       classifiers=[
