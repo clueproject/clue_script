@@ -4,7 +4,6 @@ import abc
 import argparse
 import logging
 import os
-import StringIO
 import sys
 import textwrap
 
@@ -111,41 +110,32 @@ class Commander(Command):
 
         cmd.run(argv[1:])
 
-    def get_parser(self, prog, add_command_arg=False):
-        parser = argparse.ArgumentParser(prog=prog, add_help=False)
-        if add_command_arg:
-            parser.add_argument('command',
-                                help='One of the commands to run',
-                                default='foo')
-        parser.add_argument('-h', '--help',
-                            default=False,
-                            action='store_true',
-                            help='show this help message and exit')
-        return parser
-
     def print_usage(self, prog):
-        self.get_parser(prog, True).print_help()
-        self.print(self.get_usage())
+        parser = argparse.ArgumentParser(prog=prog)
+        parser.add_argument('command',
+                            help='One of the commands to run',
+                            default='foo',
+                            nargs='?')
+        parser.print_help()
+        self.print_commands_usage()
 
-    def get_usage(self):
-        io = StringIO.StringIO()
-
+    def print_commands_usage(self):
         prog = self.prog
         if not prog and len(sys.argv) >= 1:
             prog = os.path.basename(sys.argv[0])
 
         screen_width = int(os.environ.get('COLUMNS', 75))
-        self.print(file=io)
+        self.print()
         line = textwrap.fill('note: run any of the commands with a trailing '
                              '--help to get extended information about the '
                              'command',
                              subsequent_indent='      ',
                              width=screen_width)
-        self.print(line, file=io)
+        self.print(line)
 
-        self.print(file=io)
-        self.print('commands:', file=io)
-        self.print(file=io)
+        self.print()
+        self.print('commands:')
+        self.print()
 
         max_len = -1
         for name in self.commands:
@@ -167,9 +157,7 @@ class Commander(Command):
                                  subsequent_indent=' ' * (max_len + 6),
                                  width=screen_width)
 
-            self.print(line, file=io)
-
-        return io.getvalue()
+            self.print(line)
 
     def _get_doc(self, command):
         s = getattr(command, '__doc__', '')
