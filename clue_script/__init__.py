@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import abc
 import logging
-import StringIO
 import sys
 import textwrap
 
@@ -13,17 +12,20 @@ try:
 except:
     __version__ = 'dev'
 
+
 def make_reloadable_server_command(*args, **kwargs):
     '''Create a new runserver command'''
 
     from clue_script._wsgi import ReloadableServerCommand
     return ReloadableServerCommand(*args, **kwargs)
 
+
 def make_syncdb_command(*args, **kwargs):
     '''Create a new syncdb command'''
 
     from clue_script._syncdb import SyncDBCommand
-    return SyncDBCommand(*args, **kwargs)   
+    return SyncDBCommand(*args, **kwargs)
+
 
 class Command(object):
     '''Base class for commands, provides support for setting up default
@@ -33,16 +35,20 @@ class Command(object):
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractproperty
-    def __name__(self): pass
+    def __name__(self):
+        pass
 
     def __init__(self, logger=None):
         self.logger = logger
         if logger is None:
-            self.logger = logging.getLogger('%s.%s' % (__package__, self.__name__))
+            self.logger = logging.getLogger(
+                '%s.%s' % (__package__, self.__name__))
             self.logger.setLevel(logging.INFO)
 
     @abc.abstractmethod
-    def run(self, argv): pass
+    def run(self, argv):
+        pass
+
 
 class Commander(Command):
     '''A command that knows how to run sub-commands.
@@ -92,12 +98,14 @@ class Commander(Command):
         self.print('Commands:')
         for x in self._commands:
             name = x.__name__
-            c = (20-len(name))
+            c = 20 - len(name)
             if c < 2:
                 spaces = '  '
             else:
                 spaces = (c * ' ') + '  '
-            line = '    %s%s%s' % (x.__name__, spaces, (x.__doc__ or '').strip())
+            line = '    %s%s%s' % (x.__name__,
+                                   spaces,
+                                   (x.__doc__ or '').strip())
             self.print(textwrap.fill(line))
 
     def find_command(self, s):
@@ -119,6 +127,7 @@ class Commander(Command):
                 commander.add(PseudoCommand(v))
         return commander
 
+
 class PseudoCommand(Command):
     '''A simple command that acts as a proxy for any sort
     of callable.
@@ -138,6 +147,7 @@ class PseudoCommand(Command):
     @property
     def __name__(self):
         return self.name
+
 
 def command(f):
     '''A decorator that marks the given function as being command-able'''
