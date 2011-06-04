@@ -9,6 +9,9 @@ from paste import httpserver, reloader
 from clue_script import Command, __version__
 
 
+prog_prefix = os.path.basename(sys.argv[0])
+
+
 class ReloadableServerCommand(Command):
     '''Launch development web server to serve this application
     '''
@@ -17,7 +20,7 @@ class ReloadableServerCommand(Command):
 
     __name__ = 'runserver'
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(prog=prog_prefix + ' ' + __name__)
     parser.add_argument('-i', '--host',
                         help=('Host/IP to listen on, specify 0.0.0.0 '
                               'for all available interfaces'),
