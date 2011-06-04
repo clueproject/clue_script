@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import abc
 import logging
+import os
 import sys
 import textwrap
 
@@ -72,10 +73,11 @@ class Commander(Command):
 
     __name__ = 'commander'
 
-    def __init__(self, initial_commands=None):
+    def __init__(self, initial_commands=None, prog=None):
         # copy the iterable as our base list
         self.commands = OrderedDict([(x.__name__, x)
                                      for x in initial_commands or []])
+        self.prog = prog
 
     def add(self, cmd):
         '''Add the given subcommand'''
@@ -110,17 +112,38 @@ class Commander(Command):
         cmd.run(argv[1:])
 
     def print_usage(self):
-        self.print('Commands:')
-        for name, x in self.commands.items():
-            c = 20 - len(name)
-            if c < 2:
-                spaces = '  '
-            else:
-                spaces = (c * ' ') + '  '
-            line = '    %s%s%s' % (x.__name__,
-                                   spaces,
-                                   (x.__doc__ or '').strip())
-            self.print(textwrap.fill(line))
+        prog = self.prog
+        if not prog and len(sys.argv) >= 1:
+            prog = os.path.basename(sys.argv[0])
+
+        self.print()
+        self.print('  USAGE: %s <command> [<arg1>..<argN>]' % prog)
+        self.print()
+        self.print('  Commands:')
+        self.print()
+
+        max_len = -1
+        for name in self.commands:
+            if len(name) > max_len:
+                max_len = len(name)
+
+        if max_len > 20:
+            max_len = 20
+
+        for name, command in self.commands.items():
+            line = name
+            line += ' ' * (max_len - len(line))
+            line += '    '
+
+            doc = command.__doc__ or ''
+            line += ' '.join([x.strip() for x in doc.split('\n')])
+            line = textwrap.dedent(line).strip()
+            line = textwrap.fill(line, initial_indent='    ',
+                                 subsequent_indent=' ' * (max_len + 8))
+
+            self.print(line)
+
+        self.print()
 
     @classmethod
     def scan(cls, ns=globals()):

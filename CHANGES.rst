@@ -6,6 +6,8 @@ Changes
 0.3 (unreleased)
 ----------------
 
+  * Improved formatting of command usage
+
   * Removed mostly useless make_syncdb command
 
   * Made Commander.commands a little more exposed
