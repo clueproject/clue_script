@@ -23,12 +23,22 @@ class ReloadableServerCommand(Command):
     defaults = {
         'host': '0.0.0.0',
         'port': '8080',
-        'with_reloader': False,
+        'with_reloader': 1,
         }
 
-    def __init__(self, app_factory, logger=None):
+    use_rfoo = False
+    rfoo_namespace = None
+
+    def __init__(self, app_factory=None, application=None, logger=None):
         super(ReloadableServerCommand, self).__init__(logger)
-        self.app_factory = app_factory
+        if application is not None:
+            self.application = application
+        elif app_factory is not None:
+            self.application = app_factory()
+        else:
+            raise ValueError('Must specify one of "app_factory" or "app"')
+
+        self.rfoo_namespace = {}
 
         self.parser = parser = \
             argparse.ArgumentParser(prog=prog_prefix + ' ' + self.__name__,
@@ -42,15 +52,20 @@ class ReloadableServerCommand(Command):
         parser.add_argument('-p', '--port', type=int,
                             help='Port to listen on (default: %(default)s)',
                             default=self.defaults['port'], metavar='port')
-        parser.add_argument('--with-reloader', action='store_true',
-                            help=('Watch for code changes and restart '
+        parser.add_argument('--with-reloader', nargs='?',
+                            help=('1 to watch for code changes and restart '
                                   'as necessary (default: %(default)s)'),
                             default=self.defaults['with_reloader'])
 
     def run(self, argv):
         ns = self.parser.parse_args(argv)
-        runner = WSGIAppRunner(app_factory=self.app_factory, host=ns.host,
-                               port=ns.port, logger=self.logger)
+        ns.with_reloader = bool(int(ns.with_reloader))
+
+        runner = WSGIAppRunner(application=self.application,
+                               host=ns.host,
+                               port=ns.port, logger=self.logger,
+                               use_rfoo=self.use_rfoo,
+                               rfoo_namespace=self.rfoo_namespace)
         runner.wsgi_serve(with_reloader=ns.with_reloader)
 
 
@@ -89,16 +104,16 @@ class WSGIServer(httpserver.WSGIServer, object):
 class WSGIAppRunner(object):
 
     _reloader_key = 'CLUE_SCRIPT_RELOADER'
+    rfoo_port = 54321
 
-    def __init__(self, app_factory, host, port, logger=None):
-        self.app_factory = app_factory
+    def __init__(self, application, host, port, logger=None,
+                 use_rfoo=False, rfoo_namespace={}):
+        self.application = application
         self.host = host
         self.port = port
         self.logger = logger or logging.getLogger('clue_script.unused')
-
-    @property
-    def application(self):
-        return self.app_factory()
+        self.use_rfoo = use_rfoo
+        self.rfoo_namespace = rfoo_namespace
 
     def wsgi_serve(self, with_reloader):
         if not with_reloader or self._reloader_key not in os.environ:
@@ -109,6 +124,10 @@ class WSGIAppRunner(object):
             reloader.install()
 
         if self._reloader_key in os.environ or not with_reloader:
+            if self.use_rfoo:
+                from rfoo.utils import rconsole
+                rconsole.spawn_server(self.rfoo_namespace, self.rfoo_port)
+                self.logger.info('Rfoo listening on port %i' % self.rfoo_port)
             server = WSGIServer(self.application, self.host,
                                 self.port, self.logger)
             server.serve_forever()

@@ -6,6 +6,10 @@ Changes
 0.3 (unreleased)
 ----------------
 
+  * Added rfoo support for launching a shell to connect with live-running
+    server
+    http://code.google.com/p/rfoo/
+
   * Improved formatting of command usage
 
   * Removed mostly useless make_syncdb command
