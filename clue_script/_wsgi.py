@@ -10,7 +10,7 @@ from clue_script import Command, __version__
 
 
 class ReloadableServerCommand(Command):
-    '''Run a reloadable development web server.
+    '''Launch development web server to serve this application
     '''
 
     _logger_name = __package__ + '.server'
