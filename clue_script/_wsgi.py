@@ -13,28 +13,39 @@ prog_prefix = os.path.basename(sys.argv[0])
 
 
 class ReloadableServerCommand(Command):
-    '''Launch development web server to serve this application
+    '''Launch web server to serve this application.
     '''
 
     _logger_name = __package__ + '.server'
 
     __name__ = 'runserver'
 
-    parser = argparse.ArgumentParser(prog=prog_prefix + ' ' + __name__)
-    parser.add_argument('-i', '--host',
-                        help=('Host/IP to listen on, specify 0.0.0.0 '
-                              'for all available interfaces'),
-                        default='0.0.0.0', metavar='host')
-    parser.add_argument('-p', '--port', type=int,
-                        help='Port to listen on, defaults to 8080',
-                        default=8080, metavar='port')
-    parser.add_argument('--with-reloader', action='store_true',
-                        help='Watch for code changes and restart as necessary',
-                        default=False)
+    defaults = {
+        'host': '0.0.0.0',
+        'port': '8080',
+        'with_reloader': False,
+        }
 
     def __init__(self, app_factory, logger=None):
         super(ReloadableServerCommand, self).__init__(logger)
         self.app_factory = app_factory
+
+        self.parser = parser = \
+            argparse.ArgumentParser(prog=prog_prefix + ' ' + self.__name__,
+                                    description=self.__doc__)
+        parser.add_argument('-i', '--host',
+                            help=('Host/IP/Interface to listen on, '
+                                  'specify 0.0.0.0 '
+                                  'for all available interfaces '
+                                  '(default: %(default)s)'),
+                            default=self.defaults['host'], metavar='host')
+        parser.add_argument('-p', '--port', type=int,
+                            help='Port to listen on (default: %(default)s)',
+                            default=self.defaults['port'], metavar='port')
+        parser.add_argument('--with-reloader', action='store_true',
+                            help=('Watch for code changes and restart '
+                                  'as necessary (default: %(default)s)'),
+                            default=self.defaults['with_reloader'])
 
     def run(self, argv):
         ns = self.parser.parse_args(argv)
