@@ -1,8 +1,10 @@
 from __future__ import print_function
 
 import abc
+import argparse
 import logging
 import os
+import StringIO
 import sys
 import textwrap
 
@@ -91,36 +93,68 @@ class Commander(Command):
 
         print(*args, **kwargs)
 
-    def invalid_command_trigger(self, s):
-        '''Fired when an incorrect command is executed'''
-
-        self.print()
-        self.print('Not a valid command: %s' % s)
-        self.print()
-        self.print_usage()
-
     def run(self, argv=sys.argv[1:]):
-        if len(argv) == 0:
-            self.print_usage()
-            return
-
-        cmd = self.commands.get(argv[0])
-        if cmd is None:
-            self.invalid_command_trigger(argv[0])
-            return
-
-        cmd.run(argv[1:])
-
-    def print_usage(self):
         prog = self.prog
         if not prog and len(sys.argv) >= 1:
             prog = os.path.basename(sys.argv[0])
 
-        self.print()
-        self.print('  USAGE: %s <command> [<arg1>..<argN>]' % prog)
-        self.print()
-        self.print('  Commands:')
-        self.print()
+        add_help = len(argv) == 0 or '-h' in argv or '--help' in argv
+        parser = self.get_parser(prog, not add_help)
+
+        if add_help:
+            argv = list(argv)
+            argv.append('-h')
+
+        ns = parser.parse_args(argv)
+
+        if ns.help:
+            self.print_usage(prog)
+            return
+
+        cmd = self.commands.get(ns.command)
+        if cmd is None:
+            self.print()
+            self.print('  ERROR: Not a valid command: %s' % ns.command)
+            self.print_usage(prog)
+            return
+
+        cmd.run(argv[1:])
+
+    def get_parser(self, prog, add_command_arg=False):
+        parser = argparse.ArgumentParser(prog=prog, add_help=False)
+        if add_command_arg:
+            parser.add_argument('command',
+                                help='One of the commands to run',
+                                default='foo')
+        parser.add_argument('-h', '--help',
+                            default=False,
+                            action='store_true',
+                            help='show this help message and exit')
+        return parser
+
+    def print_usage(self, prog):
+        self.get_parser(prog, True).print_help()
+        self.print(self.get_usage())
+
+    def get_usage(self):
+        io = StringIO.StringIO()
+
+        prog = self.prog
+        if not prog and len(sys.argv) >= 1:
+            prog = os.path.basename(sys.argv[0])
+
+        screen_width = int(os.environ.get('COLUMNS', 75))
+        self.print(file=io)
+        line = textwrap.fill('note: run any of the commands with a trailing '
+                             '--help to get extended information about the '
+                             'command',
+                             subsequent_indent='      ',
+                             width=screen_width)
+        self.print(line, file=io)
+
+        self.print(file=io)
+        self.print('commands:', file=io)
+        self.print(file=io)
 
         max_len = -1
         for name in self.commands:
@@ -135,15 +169,25 @@ class Commander(Command):
             line += ' ' * (max_len - len(line))
             line += '    '
 
-            doc = command.__doc__ or ''
+            doc = self._get_doc(command)
             line += ' '.join([x.strip() for x in doc.split('\n')])
             line = textwrap.dedent(line).strip()
-            line = textwrap.fill(line, initial_indent='    ',
-                                 subsequent_indent=' ' * (max_len + 8))
+            line = textwrap.fill(line, initial_indent='  ',
+                                 subsequent_indent=' ' * (max_len + 6),
+                                 width=screen_width)
 
-            self.print(line)
+            self.print(line, file=io)
 
-        self.print()
+        self.print(file=io)
+
+        return io.getvalue()
+
+    def _get_doc(self, command):
+        s = getattr(command, '__doc__', '')
+        period = s.find('.')
+        if period > -1:
+            return s[0:period]
+        return s
 
     @classmethod
     def scan(cls, ns=globals()):
@@ -169,7 +213,7 @@ class PseudoCommand(Command):
             raise TypeError('First argument must be a callable')
 
         self.func = func
-        self.name = name or func.__name__
+        self.name = name or getattr(func, '__name__')
         self.__doc__ = doc or func.__doc__
 
     def run(self, argv):
@@ -180,8 +224,14 @@ class PseudoCommand(Command):
         return self.name
 
 
-def command(f):
+def command(*args, **kwargs):
     '''A decorator that marks the given function as being command-able'''
 
-    f.__clue_script_command = True
-    return f
+    def command(f, kwargs=kwargs):
+        f.__clue_script_command = True
+        f.__clue_script_kwargs = kwargs
+
+    if len(args) > 0:
+        return command(args[0])
+
+    return command
