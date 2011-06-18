@@ -160,7 +160,7 @@ class Commander(Command):
             self.print(line)
 
     def _get_doc(self, command):
-        s = getattr(command, '__doc__', '')
+        s = getattr(command, '__doc__', '') or ''
         period = s.find('.')
         if period > -1:
             return s[0:period]
