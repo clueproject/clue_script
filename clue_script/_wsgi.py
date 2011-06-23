@@ -61,9 +61,17 @@ class ReloadableServerCommand(Command):
         ns = self.parser.parse_args(argv)
         ns.with_reloader = bool(int(ns.with_reloader))
 
+        http_logger = get_http_logger(self.logger)
+        if len(http_logger.handlers) == 0:
+            handler = logging.StreamHandler()
+            handler.setFormatter(logging.Formatter('%(message)s'))
+            http_logger.addHandler(handler)
+            http_logger.propagate = False
+
         runner = WSGIAppRunner(application=self.application,
                                host=ns.host,
-                               port=ns.port, logger=self.logger,
+                               port=ns.port,
+                               logger=self.logger,
                                use_rfoo=self.use_rfoo,
                                rfoo_namespace=self.rfoo_namespace)
         runner.wsgi_serve(with_reloader=ns.with_reloader)
@@ -74,12 +82,17 @@ class WSGIHandler(httpserver.WSGIHandler, object):
         self.logger = logger
         super(WSGIHandler, self).__init__(*args, **kwargs)
 
-    def wsgi_execute(self, environ=None):
-        super(WSGIHandler, self).wsgi_execute(environ=environ)
+    def wsgi_start_response(self, status, response_headers, exc_info=None):
+        res = super(WSGIHandler, self).wsgi_start_response(
+            status, response_headers, exc_info)
         environ = self.wsgi_environ
-        self.logger.info('%s %s%s' % (environ['REQUEST_METHOD'],
-                                      environ['SCRIPT_NAME'],
-                                      environ['PATH_INFO']))
+        pieces = status.split(' ')
+        status = pieces[0]
+        self.logger.info('%s %s%s %s' % (environ['REQUEST_METHOD'],
+                                         environ['SCRIPT_NAME'],
+                                         environ['PATH_INFO'],
+                                         status))
+        return res
 
 
 class WSGIServer(httpserver.WSGIServer, object):
@@ -99,6 +112,15 @@ class WSGIServer(httpserver.WSGIServer, object):
 
     def wsgi_handler(self, *args, **kwargs):
         return WSGIHandler(self.logger, *args, **kwargs)
+
+
+def get_http_logger(logger=None):
+    http_name = getattr(logger, 'name', '')
+    if http_name:
+        http_name += '.http'
+    else:
+        http_name = 'clue_script.http'
+    return logging.getLogger(http_name)
 
 
 class WSGIAppRunner(object):
@@ -128,8 +150,10 @@ class WSGIAppRunner(object):
                 from rfoo.utils import rconsole
                 rconsole.spawn_server(self.rfoo_namespace, self.rfoo_port)
                 self.logger.info('Rfoo listening on port %i' % self.rfoo_port)
+            self.logger.info('http ready')
+
             server = WSGIServer(self.application, self.host,
-                                self.port, self.logger)
+                                self.port, get_http_logger(self.logger))
             server.serve_forever()
             return
 
