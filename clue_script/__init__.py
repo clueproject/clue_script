@@ -98,14 +98,14 @@ class Commander(Command):
             prog = os.path.basename(sys.argv[0])
 
         if len(argv) == 0 or argv[0] in ('-h', '--help'):
-            self.print_usage(prog)
+            self.print_usage()
             return
 
         cmd = self.commands.get(argv[0])
         if cmd is None:
             self.print()
             self.print('  ERROR: Not a valid command: %s' % argv[0])
-            self.print_usage(prog)
+            self.print_usage()
             return
 
         cmd.run(argv[1:])
@@ -201,14 +201,12 @@ class PseudoCommand(Command):
         return self.name
 
 
-def command(*args, **kwargs):
+def command(**kwargs):
     '''A decorator that marks the given function as being command-able'''
 
     def command(f, kwargs=kwargs):
         f.__clue_script_command = True
         f.__clue_script_kwargs = kwargs
-
-    if len(args) > 0:
-        return command(args[0])
+        return f
 
     return command
