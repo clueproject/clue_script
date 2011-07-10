@@ -3,8 +3,8 @@
 Changes
 =======
 
-0.3 (unreleased)
-----------------
+0.3 (Jul-10-2011)
+-----------------
 
   * Added rfoo support for launching a shell to connect with live-running
     server
