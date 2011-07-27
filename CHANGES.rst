@@ -3,6 +3,11 @@
 Changes
 =======
 
+0.3.1 (Jul-27-2011)
+-------------------
+
+  * Fixed silly bug where print_usage() was being called wrong
+
 0.3 (Jul-10-2011)
 -----------------
 

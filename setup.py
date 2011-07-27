@@ -13,7 +13,7 @@ except ImportError:
     requires.append('argparse >= 1.2')
 
 setup(name='clue_script',
-      version='0.3',
+      version='0.3.1',
       description='Easy utils for creating a script runner',
       long_description=README + '\n\n' + CHANGES,
       classifiers=[
