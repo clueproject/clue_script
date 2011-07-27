@@ -110,7 +110,7 @@ class Commander(Command):
 
         cmd.run(argv[1:])
 
-    def print_usage(self, prog):
+    def print_usage(self, prog=''):
         parser = argparse.ArgumentParser(prog=prog)
         parser.add_argument('command',
                             help='One of the commands to run',
